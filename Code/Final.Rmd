@@ -1,0 +1,348 @@
+---
+title: "NYC Airbnb"
+author: "Marcel Socorro"
+date: "September 9, 2020"
+output:
+  rmarkdown::html_document:
+    theme: lumen
+  html_document:
+    df_print: paged
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(dplyr)
+library(ggmap)
+library(maptools)
+library(tidyverse)
+library(RColorBrewer)
+library(rpart)
+library(e1071)
+library(rpart.plot)
+library(nnet)
+library(AICcmodavg)
+```
+```{r}
+data<-read_csv("AB_NYC_2019.csv")
+```
+```{r}
+data1<-subset(data,data$availability_365>0)
+```
+
+
+```{r}
+# store bounding box coordinates
+nyc_bb <- c(left = -74.250000,
+            bottom = 40.490000,
+            right = -73.710000,
+            top = 40.9140000)
+
+nyc_stamen <- get_stamenmap(bbox = nyc_bb,
+                                zoom = 9)
+```
+```{r}
+# store bounding box coordinates
+nyc_bb1 <- c(left = -74.150000,
+            bottom = 40.630000,
+            right = -73.850000,
+            top = 40.8700000)
+
+nyc_stamen1 <- get_stamenmap(bbox = nyc_bb1,
+                                zoom = 11)
+```
+```{r}
+ggmap(nyc_stamen1) +
+  stat_density_2d(data = data,
+                  aes(x = longitude,
+                      y = latitude,
+                      fill = stat(level)),
+                  alpha = .5,
+                  bins = 25,
+                  geom = "polygon") +
+  scale_fill_gradientn(colors = brewer.pal(7, "YlOrRd"))+facet_wrap(~ `room_type`)+theme(axis.text.x = element_text(angle = 90))+labs(title= "NY heat map by type of room posted")
+```
+```{r}
+ggmap(nyc_stamen1) +
+  stat_density_2d(data = data,
+                  aes(x = longitude,
+                      y = latitude,
+                      fill = stat(level)),
+                  alpha = .8,
+                  bins = 25,
+                  geom = "polygon") +
+  scale_fill_gradientn(colors = brewer.pal(7, "YlOrRd"))+labs(title= "NY heat map posting location")
+```
+```{r}
+ggmap(nyc_stamen1) +
+  geom_point(data = data,
+             aes(x = longitude,
+                 y = latitude),
+             size = .25,
+             alpha = .1)+facet_wrap(~ `neighbourhood_group`)+labs(title= "NY heat map posting location by neighborhood")
+```
+```{r}
+byNeighbourhood<-group_by(data1,neighbourhood_group)
+summary<-summarize(byNeighbourhood,mean(price))
+summary$`mean(price)`<-round(summary$`mean(price)`, 2)
+ggplot(summary,aes(x=neighbourhood_group,y=summary$`mean(price)`, fill=neighbourhood_group))+geom_bar(stat='identity', color="black")+labs(title="Average price per night Airbnb by NYC Neighbourhood",x="NYC Neighbourhood",y="Avg price per night ($)")+ geom_text(aes(label=summary$`mean(price)`), vjust=-.25)
+```
+```{r}
+byNeighbourhood1<-group_by(data1,neighbourhood_group,room_type)
+summary1<-summarize(byNeighbourhood1,mean(price))
+summary1$`mean(price)`<-round(summary1$`mean(price)`, 2)
+ggplot(summary1,aes(x=neighbourhood_group,y=summary1$`mean(price)`,fill=neighbourhood_group))+geom_bar(stat='identity', color="black")+labs(title="Average price per night Airbnb by NYC Neighbourhood and Room Type",x="NYC Neighbourhood",y="Avg price per night ($)")+ geom_text(size=2.5,aes(label=summary1$`mean(price)`), vjust=-.25)+facet_wrap(~room_type)+ theme(axis.text.x = element_text(angle = 45,size=7))
+```
+```{r}
+summary(data$price)
+```
+Based on the previous summary(1Q, Median and 3Q), 4 different classes will be generated.
+0-69 $/night----economic
+69-106 $/night--standard
+106-175 $/night-comfort
+175-Max $/night-luxury
+
+```{r}
+#Histogram variable price. The wide range in the variable prices does not allow get a proper information from the historgram
+ggplot(data,aes(price))+geom_histogram(fill="light blue", color="black")
+
+#If subset is applied for prices higher than 1000 usd/night we could get a better understanding for price distribution
+pricesbelow1000<-subset(data,price<1000)
+ggplot(pricesbelow1000,aes(price))+geom_histogram(fill="red", color="black")+labs(title = "Histogram variable price New York Airbnb")+geom_vline(xintercept=69, linetype="dashed", color = "blue")+geom_vline(xintercept=106, linetype="dashed", color = "blue")+geom_vline(xintercept=175, linetype="dashed", color = "blue")
+```
+```{r}
+pricesbelow500<-subset(data,price<500)
+ggplot(pricesbelow500,aes(price,fill=neighbourhood_group))+geom_histogram(color="black", show.legend = FALSE)+facet_wrap(~neighbourhood_group)+labs(title = "Histogram variable price NY Airbnb by Neighbourhood")
+```
+
+```{r}
+#Creating the class based on the price
+data$class<-ifelse(data$price>0&data$price<69,"economic",ifelse(data$price>=69&data$price<106,"standard",ifelse(data$price>=106&data$price<175,"comfort","luxury")))
+data$class<-as.factor(data$class)
+```
+
+```{r}
+#Function accuracy values per different samples
+accuracyNBLag<-function(trials){
+  acc <- data.frame(i = integer(),Accuracy= integer())
+  for(i in 420:trials) {
+  # random sample
+  smp_size <- floor(0.75 * nrow(data))
+## set the seed to make the partition reproducible
+set.seed(i)
+train_ind <- sample(seq_len(nrow(data)), size = smp_size)
+trainC <- data[train_ind, ]
+testC <- data[-train_ind, ]  
+NBmodelC<-naiveBayes(class~neighbourhood_group+room_type+minimum_nights+number_of_reviews,data=trainC,laplace = 1)
+NB_prediction1C<-predict(NBmodelC,testC, type = "class")
+confumatNB<-data.frame(Actual=testC$class,Prediction=NB_prediction1C)
+accuracy<-nrow(subset(confumatNB,Actual==Prediction))/nrow(confumatNB)
+accuracy
+trial=i
+attempt <- data.frame(Trial = trial, Accuracy = accuracy)
+acc <- rbind(acc,attempt)
+  }
+  return(acc)
+}
+```
+```{r}
+accuracyNB30Lag<-accuracyNBLag(450)
+```
+```{r}
+avgNB<-data.frame("AvgAccuracy"=mean(accuracyNB30Lag$Accuracy),"model"="NB")
+cat("The average accuracy for Naïve Bayes model with 30 different sampling split of training and testing set is:",avgNB$AvgAccuracy)
+```
+```{r}
+#Function accuracy values per different samples
+accuracyRFLag<-function(trials){
+  acc <- data.frame(i = integer(),Accuracy= integer())
+  for(i in 420:trials) {
+  # random sample
+  smp_size <- floor(0.75 * nrow(data))
+## set the seed to make the partition reproducible
+set.seed(i)
+train_ind <- sample(seq_len(nrow(data)), size = smp_size)
+trainC <- data[train_ind, ]
+testC <- data[-train_ind, ]  
+RFmodelC<-rpart(class~neighbourhood_group+room_type+minimum_nights+number_of_reviews+availability_365, data=trainC, method="class")
+RF_prediction1C<-predict(RFmodelC,testC, type = "class")
+confumatRF<-data.frame(Actual=testC$class,Prediction=RF_prediction1C)
+accuracy<-nrow(subset(confumatRF,Actual==Prediction))/nrow(confumatRF)
+accuracy
+trial=i
+attempt <- data.frame(Trial = trial, Accuracy = accuracy)
+acc <- rbind(acc,attempt)
+  }
+  return(acc)
+}
+```
+```{r}
+accuracyRF30Lag<-accuracyRFLag(450)
+```
+```{r}
+avgRF<-data.frame("AvgAccuracy"=mean(accuracyRF30Lag$Accuracy),"model"="CART")
+cat("The average accuracy for CART model with 30 different sampling split of training and testing set is:",avgRF$AvgAccuracy)
+```
+```{r}
+#Function accuracy values per different samples
+accuracyANNLag<-function(trials){
+  acc <- data.frame(i = integer(),Accuracy= integer())
+  for(i in 420:trials) {
+  # random sample
+  smp_size <- floor(0.75 * nrow(data))
+## set the seed to make the partition reproducible
+set.seed(i)
+train_ind <- sample(seq_len(nrow(data)), size = smp_size)
+trainC <- data[train_ind, ]
+testC <- data[-train_ind, ]  
+modelANNC<-nnet(class~neighbourhood_group+room_type+minimum_nights+number_of_reviews+availability_365,data=trainC,size = 3,decay = 0.0001,maxit = 500)
+pred_nnet<-predict(modelANNC,testC,type="class")
+confumatANN<-data.frame(Actual=testC$class,Prediction=pred_nnet)
+accuracy<-nrow(subset(confumatANN,Actual==Prediction))/nrow(confumatANN)
+accuracy
+trial=i
+attempt <- data.frame(Trial = trial, Accuracy = accuracy)
+acc <- rbind(acc,attempt)
+  }
+  return(acc)
+}
+```
+```{r}
+accuracyANN30Lag<-accuracyANNLag(450)
+```
+```{r}
+avgANN<-data.frame("AvgAccuracy"=mean(accuracyANN30Lag$Accuracy),"model"="ANN")
+cat("The average accuracy for ANN model with 30 different sampling split of training and testing set is:",avgANN$AvgAccuracy)
+```
+```{r}
+avgAccuracyModels<-rbind(avgANN,avgNB,avgRF)
+avgAccuracyModels$AvgAccuracy<-round(avgAccuracyModels$AvgAccuracy,2)
+ggplot(avgAccuracyModels,aes(model,AvgAccuracy,fill=model))+geom_bar(position = "dodge",stat = "identity",color="black")+ylim(0,0.55)+ geom_text(size=4,aes(label=AvgAccuracy), vjust=-.25)+labs(title="Avg Accuracy per model", x="Model", y="Avg")
+```
+
+```{r}
+accuracyANN30Lag$model<-"ANN"
+accuracyRF30Lag$model<-"CART"
+accuracyNB30Lag$model<-"NB"
+accuracyModels<-rbind(accuracyANN30Lag,accuracyRF30Lag,accuracyNB30Lag)
+Anova<-aov(Accuracy~model,data = accuracyModels)
+summary(Anova)
+```
+According to Anova results with a pvalue less than alpha (0.05) there is a significant difference among the models for the set of accuracy results obtained. Which is the model significantly different? 
+```{r}
+TukeyHSD(Anova)
+```
+According to Tukey test, the 3 pairs are significantly different between them. ANN has the highest avg accuracy so it will be chosen as the best model to predict the variable class determined by 4 pricing ranges.
+```{r}
+#If a graph of a Regression and Classification tree is plotted, it could be seen that the variables impacting in the class are "neighborhood_group" and room_type
+smp_size <- floor(0.75 * nrow(data))
+set.seed(123)
+train_ind <- sample(seq_len(nrow(data)), size = smp_size)
+trainC <- data[train_ind, ]
+testC <- data[-train_ind, ]  
+RFmodelC<-rpart(class~neighbourhood_group+room_type+minimum_nights+number_of_reviews+availability_365, data=trainC, method="class")
+
+rpart.plot(RFmodelC)
+```
+let's run a Two-way Anova to determine which are the combinations from variables room_type and neighbourhood_group significantly different.
+
+#Requirements for Anova two-way 
+## The populations from which the samples were obtained must be normally or approximately normally distributed.
+## The samples must be independent. (This requirement is considered as met)
+## The variances of the populations must be equal.
+## The groups must have the same sample size.
+```{r}
+## The populations from which the samples were obtained must be normally or approximately normally distributed.
+hist(data$price)
+```
+Prices around 10000 $/night will be considered as outliers, this kind of prices are too exclusive and distant from the rest of the population, so let's subset and consider the data for the population below than 500 usd/night.
+```{r}
+sampleNormal<-data.frame("price"=sample(pricesbelow500$price,5000))
+shapiro.test(sampleNormal$price)
+hist(sampleNormal$price)
+```
+According to shapiro test p value is less than alpha so the data can't be considered as normal, so let's try to transformate the data. Since division by zero is a problem, log+1 transformation would be better.
+```{r}
+sampleNormal$priceLog<- log(sampleNormal$price+1)
+hist(sampleNormal$priceLog)
+shapiro.test(sampleNormal$priceLog)
+```
+Applying the same test upon the data transformed, we got pvalue less than alpha, so the null hypothesis the data is normal is rejected. 
+For this particular case since the dataset has 47k rows let's apply the Central Limit Theorem, for which if the population is not normally distributed, but the sample size is sufficiently large, then the sample means will have an approximately normal distribution. So, let's proceed with the next assumption.
+Some books define sufficiently large as at least 30 and others as at least 31. 
+
+```{r}
+## The variances of the populations must be equal. 
+groupByRoomNeigh<-group_by(pricesbelow500,room_type,neighbourhood_group)
+byRoomNeigh<-summarise(groupByRoomNeigh,
+                       "stdPrice"=sd(price),
+                       "qtyObservations"=n())
+byRoomNeigh
+```
+There is a relative difference between variance of all populations, but let's assume that this difference it is not representative.
+Going back to Central Limit Theorem, the size of the samples to be considered as sufficiently large should be greater than 31 observations.  The combination Shared room---Staten Island doesn't meet the large of the size (9). For this combination it will be used replacement of the values option (using the Parameter TRUE in the function sample) duplicating the same values until we get the size of the sample required, in this case it will be set on 40 observations.
+
+```{r}
+## The groups must have the same sample size. 
+sampleAnova <- pricesbelow500 %>% group_by(neighbourhood_group,room_type) %>% sample_n(40, TRUE)
+```
+
+
+```{r}
+#Because we have a few different possible relationships between our variables, we will compare two models:
+
+#1-A two-way ANOVA without any interaction or blocking variable (a.k.a an additive two-way ANOVA).assumes there is no interaction between the two independent variables
+#2-A two-way ANOVA with interaction but with no blocking variable.assumes that there is an interaction between the two independent variables
+
+#1-Two way ANOVA
+two.way <- aov(price ~ neighbourhood_group + room_type, data = sampleAnova)
+
+#2-Two-way ANOVA with interaction
+interaction <- aov(price ~ neighbourhood_group * room_type, data = sampleAnova)
+```
+```{r}
+model.set <- list(two.way, interaction)
+model.names <- c("two.way", "interaction")
+
+aictab(model.set, modnames = model.names)
+```
+The AIC model with the best fit will be listed first, with the second-best listed next, and so on. This comparison reveals that two way ANOVA without interaction is the best fit for the data.
+```{r}
+summary(two.way)
+```
+For the row factor neighborhood_group  P-value = 3.4e-11 < α Reject H0 so there is an effect from the row factor (neighbourhood_group) and at least one row mean is different from the other.
+
+For the row factor room_type  P-value < 2e-16 < α Reject H0 so there is an effect from the row factor (room_type) and at least one row mean is different from the other.
+
+```{r}
+TukeyHSD(two.way)
+```
+```{r}
+tukey<-TukeyHSD(two.way)
+NeighbourhoodCombinations<-data.frame(tukey[1])
+colnames(NeighbourhoodCombinations)<-c("diff","lwr","upr","p.adj")
+RoomsCombinations<-data.frame(tukey[2])
+colnames(RoomsCombinations)<-c("diff","lwr","upr","p.adj")
+twoWayTable<-rbind(NeighbourhoodCombinations,RoomsCombinations)
+twoWayData <- cbind(Combination = rownames(twoWayTable), twoWayTable)
+rownames(twoWayTable) <- 1:nrow(twoWayTable)
+rownames(twoWayData) <- NULL
+CombSignDiff<-subset(twoWayData,p.adj<0.05)
+CombNotSignDiff<-subset(twoWayData,p.adj>=0.05)
+CombSignDiff<-CombSignDiff[,c(1,5)]
+CombSignDiff
+```
+```{r}
+CombNotSignDiff<-CombNotSignDiff[,c(1,5)]
+CombNotSignDiff
+```
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
