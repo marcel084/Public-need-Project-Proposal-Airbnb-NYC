@@ -26,6 +26,7 @@ The analysis is detailed in the rmd code and it is structured the document Final
 1. d) Comparison and hyphotesis testing to determine the best predictive model based on the greatest accuracy.
 1. e) Predicting variables impacting the model
 1. f) Combinations of these variables impacting significantly in the variable price
+![HeatMap](https://github.com/marcel084/Public-need-Project-Proposal-Airbnb-NYC/blob/master/Images/HeatMap.png) ![AvgPrice](https://github.com/marcel084/Public-need-Project-Proposal-Airbnb-NYC/blob/master/Images/AvgPrice.png) ![AccuracyModels](https://github.com/marcel084/Public-need-Project-Proposal-Airbnb-NYC/blob/master/Images/AccuracyModels.png) 
 # **Results**
 1. ANN model is the best model to predict this class with an average accuracy of 52% in the prediction of 4 different classes.
 2. The variables impacting the most in this prediction are:
@@ -34,6 +35,6 @@ The analysis is detailed in the rmd code and it is structured the document Final
 3. Tukey results proved that the 3 levels in the variable type of room are significantly different among them. Meanwhile in the variable neighborhood group, only one level is significantly different from the rest, this neighborhood is Manhattan. 
 
 
-![HeatMap](https://github.com/marcel084/Public-need-Project-Proposal-Airbnb-NYC/blob/master/Images/HeatMap.png) ![AvgPrice](https://github.com/marcel084/Public-need-Project-Proposal-Airbnb-NYC/blob/master/Images/AvgPrice.png) ![AccuracyModels](https://github.com/marcel084/Public-need-Project-Proposal-Airbnb-NYC/blob/master/Images/AccuracyModels.png) 
+
 
 
