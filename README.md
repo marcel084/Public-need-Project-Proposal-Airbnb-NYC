@@ -28,7 +28,7 @@ The analysis is detailed in the rmd code and it is structured in the document Fi
 * f) Combinations of these variables impacting significantly in the variable price
 ![HeatMap](https://github.com/marcel084/Public-need-Project-Proposal-Airbnb-NYC/blob/master/Images/HeatMap.png)  ![AccuracyModels](https://github.com/marcel084/Public-need-Project-Proposal-Airbnb-NYC/blob/master/Images/AccuracyModels.png) 
 # **Results**
-1. ANN model is the best model to predict this class with an average accuracy of 52% in the prediction of 4 different classes.
+1. According to ANOVA results there is a significant difference among accuracy set of values' mean of the 3 predictive models, and ANN is the best model to predict the outcome with an average accuracy of 53% predicting the 4 different classes.
 2. The variables impacting the most in this prediction are:
 * Neighborhood type
 * Type of room
