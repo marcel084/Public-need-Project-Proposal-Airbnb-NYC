@@ -1,9 +1,9 @@
 # **Public-need Project Proposal Airbnb-NYC**
 What's the relationship between pricing and variables like type of room and location in NYC Airbnb renting places? How to invest smart in this business?
-> Source: NYC Airbnb Open Data
-> Analysis: Structured Data. Dataset 49k rows
-> Hypothesis: Is the average price per night significantly different in the 5 Counties of NYC? Hyphotesis testing to determine which are significantly different
-> Model Comparison: Building 3 models to classify categories determined by pricing range per night of Airbnb renting places
+* Source: NYC Airbnb Open Data
+* Analysis: Structured Data. Dataset 49k rows
+* Hypothesis: Is the average price per night significantly different in the 5 Counties of NYC? Hyphotesis testing to determine which are significantly different
+* Model Comparison: Building 3 models to classify categories determined by pricing range per night of Airbnb renting places
 
 The analysis for this project is done with R
 ## Libraries
@@ -34,7 +34,8 @@ The analysis is detailed in the rmd code and it is structured in the document Fi
 * Type of room
 3. Tukey results proved that the 3 levels in the variable type of room are significantly different among them. Meanwhile in the variable neighborhood group, only one level is significantly different from the rest, this neighborhood is Manhattan. 
 Combinations of variables with price mean proven significantly different between them.
-Combinations (Variables Room & Neighborhood)         | Pvalue (ANOVA two-way)
+
+Combinations (Variables Room & Neighborhood) | Pvalue (ANOVA two-way)
 ----------------------- | -------------
 Manhattan-Bronx | 5.118006e-10
 Manhattan-Brooklyn | 4.014856e-05
@@ -43,6 +44,7 @@ Staten Island-Manhattan | 7.765517e-09
 Private room-Entire home/apt | 4.828220e-10
 Shared room-Entire home/apt | 4.828218e-10
 Shared room-Private room | 3.825168e-03
+
 ![AvgPrice](https://github.com/marcel084/Public-need-Project-Proposal-Airbnb-NYC/blob/master/Images/AvgPrice.png)
 
 
