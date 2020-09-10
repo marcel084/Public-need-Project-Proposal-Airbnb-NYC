@@ -1,6 +1,6 @@
 # **Public-need Project Proposal Airbnb-NYC**
 What's the relationship between pricing and variables like type of room and location in NYC Airbnb renting places? How to invest smart in this business?
-* Source: NYC Airbnb Open Data
+* Source: NYC Airbnb Open Data (Kaggle)
 * Analysis: Structured Data. Dataset 49k rows
 * Hypothesis: Is the average price per night significantly different in the 5 Counties of NYC? Hyphotesis testing to determine which are significantly different
 * Model Comparison: Building 3 models to classify categories determined by pricing range per night of Airbnb renting places
