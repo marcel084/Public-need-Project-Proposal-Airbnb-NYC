@@ -26,13 +26,24 @@ The analysis is detailed in the rmd code and it is structured in the document Fi
 * d) Comparison and hyphotesis testing to determine the best predictive model based on the greatest accuracy.
 * e) Predicting variables impacting the model
 * f) Combinations of these variables impacting significantly in the variable price
-![HeatMap](https://github.com/marcel084/Public-need-Project-Proposal-Airbnb-NYC/blob/master/Images/HeatMap.png) ![AvgPrice](https://github.com/marcel084/Public-need-Project-Proposal-Airbnb-NYC/blob/master/Images/AvgPrice.png) ![AccuracyModels](https://github.com/marcel084/Public-need-Project-Proposal-Airbnb-NYC/blob/master/Images/AccuracyModels.png) 
+![HeatMap](https://github.com/marcel084/Public-need-Project-Proposal-Airbnb-NYC/blob/master/Images/HeatMap.png)  ![AccuracyModels](https://github.com/marcel084/Public-need-Project-Proposal-Airbnb-NYC/blob/master/Images/AccuracyModels.png) 
 # **Results**
 1. ANN model is the best model to predict this class with an average accuracy of 52% in the prediction of 4 different classes.
 2. The variables impacting the most in this prediction are:
 * Neighborhood type
 * Type of room
 3. Tukey results proved that the 3 levels in the variable type of room are significantly different among them. Meanwhile in the variable neighborhood group, only one level is significantly different from the rest, this neighborhood is Manhattan. 
+Combinations of variables with price mean proven significantly different between them.
+Combinations (Variables Room & Neighborhood)         | Pvalue (ANOVA two-way)         
+------------ | ------------- 
+Manhattan-Bronx | 5.118006e-10 
+Manhattan-Brooklyn | 4.014856e-05 
+Queens-Manhattan | 5.412145e-10 
+Staten Island-Manhattan | 7.765517e-09 
+Private room-Entire home/apt | 4.828220e-10 
+Shared room-Entire home/apt | 4.828218e-10 
+Shared room-Private room | 3.825168e-03 
+![AvgPrice](https://github.com/marcel084/Public-need-Project-Proposal-Airbnb-NYC/blob/master/Images/AvgPrice.png)
 
 
 
