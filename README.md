@@ -25,7 +25,7 @@ The analysis is detailed in the rmd code and it is structured in the document Fi
 * c) Building the three models through customized functions which returned a set of accuracy's values. 
 * d) Comparison and hyphotesis testing to determine the best predictive model based on the greatest accuracy value.
 * e) Which are the predicting variables impacting the model?
-* f) Which are the combinations of these variables impacting significantly in the variable price
+* f) Which are the combinations of these variables impacting significantly in the variable price?
 ![HeatMap](https://github.com/marcel084/Public-need-Project-Proposal-Airbnb-NYC/blob/master/Images/HeatMap.png)  ![AccuracyModels](https://github.com/marcel084/Public-need-Project-Proposal-Airbnb-NYC/blob/master/Images/AccuracyModels.png) 
 # **Results**
 1. According to ANOVA results there is a significant difference among accuracy set of values' mean of the 3 predictive models, and ANN is the best model to predict the outcome with an average accuracy of 53% predicting the 4 different classes.
